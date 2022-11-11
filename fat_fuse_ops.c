@@ -21,31 +21,81 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <assert.h>
 
-
+#define LOG_PATH "/fs.log"
 #define LOG_MESSAGE_SIZE 100
 #define DATE_MESSAGE_SIZE 30
 
-static void now_to_str(char *buf) {
+static void fat_fuse_init_log(fat_volume vol){
+    fat_tree_node file_node;
+
+    file_node = fat_tree_node_search(vol->file_tree, LOG_PATH);
+    
+    if (file_node != NULL){
+        DEBUG("log already exists");
+        DEBUG(LOG_PATH);
+        return;
+    }
+    
+    DEBUG("creating log");
+    int mknod_err = fat_fuse_mknod(LOG_PATH, 0, 0);
+    
+    if (mknod_err != 0){
+        DEBUG("Not possible create log file");
+        return;
+    }
+    
+    // check correct creation of file
+    file_node = fat_tree_node_search(vol->file_tree, LOG_PATH);
+    assert(file_node != NULL);
+    return;
+}
+
+/* Writes @log to the log file if it exists
+ *
+ * PRE: log != NULL
+ */
+static void fat_fuse_log_write(const char *log) {
+    assert(log != NULL);
+
+    fat_volume vol = get_fat_volume();
+    fat_tree_node log_node = fat_tree_node_search(vol->file_tree, LOG_PATH);
+    
+    if (log_node == NULL) {
+        DEBUG(LOG_PATH "doesn't exist, can't log");
+        return;
+    }
+    fat_file log_file = fat_tree_get_file(log_node);
+    fat_file parent = fat_tree_get_parent(log_node);
+    fat_file_pwrite(log_file, log, strlen(log), log_file->dentry->file_size, parent);
+}
+
+static bool is_fs_log(fat_file file) {
+    assert(file != NULL);
+    return (fat_file_cmp_path(file, LOG_PATH) == 0);
+}
+
+static void format_log(char *buf, char * filepath, char *operation_type) {
+    // now to str   
     time_t now = time(NULL);
     struct tm *timeinfo;
     timeinfo = localtime(&now);
-
     strftime(buf, DATE_MESSAGE_SIZE, "%d-%m-%Y %H:%M", timeinfo);
+
+    strcat(buf, "\t");
+    strcat(buf, getlogin());
+    strcat(buf, "\t");
+    strcat(buf, filepath);
+    strcat(buf, "\t");
+    strcat(buf, operation_type);
+    strcat(buf, "\n");
 }
 
 static void fat_fuse_log_activity(char *operation_type, fat_file file) {
     char buf[LOG_MESSAGE_SIZE] = "";
-    now_to_str(buf);
-    strcat(buf, "\t");
-    strcat(buf, getlogin());
-    strcat(buf, "\t");
-    strcat(buf, file->filepath);
-    strcat(buf, "\t");
-    strcat(buf, operation_type);
-    strcat(buf, "\n");
-    // int message_size = strlen(buf);
-    printf("%s", buf);
+    format_log(buf, file->filepath, operation_type);
+    fat_fuse_log_write(buf);
 }
 
 /* Get file attributes (file descriptor version) */
@@ -125,7 +175,10 @@ static void fat_fuse_read_children(fat_tree_node dir_node) {
     for (GList *l = children_list; l != NULL; l = l->next) {
         vol->file_tree =
             fat_tree_insert(vol->file_tree, dir_node, (fat_file)l->data);
+        
     }
+    fat_fuse_init_log(vol);
+    DEBUG("estoy??");
 }
 
 /* Add entries of a directory in @fi to @buf using @filler function. */
@@ -155,9 +208,13 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     children = fat_tree_flatten_h_children(dir_node);
     child = children;
     while (*child != NULL) {
-        error = (*filler)(buf, (*child)->name, NULL, 0);
-        if (error != 0) {
-            return -errno;
+        // hide fs.log from ls
+        if (!is_fs_log(*child)){
+            DEBUG("ENTRE");
+            error = (*filler)(buf, (*child)->name, NULL, 0);
+            if (error != 0) {
+                return -errno;
+            }
         }
         child++;
     }
