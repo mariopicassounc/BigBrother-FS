@@ -192,4 +192,9 @@ void fat_file_truncate(fat_file file, off_t offset, fat_file parent);
 ssize_t fat_file_pwrite(fat_file file, const void *buf, size_t size,
                         off_t offset, fat_file parent);
 
+/* Deletes a @file from the FAT and marck's the direntry of that @file in @parent 
+ * as deleted. 
+ */
+void fat_file_unlink(fat_file parent, fat_file file);
+
 #endif /* _FAT_FILE_H */

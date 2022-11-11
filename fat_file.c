@@ -585,3 +585,17 @@ ssize_t fat_file_pwrite(fat_file file, const void *buf,
 
     return size - bytes_remaining;
 }
+
+void fat_file_unlink(fat_file parent, fat_file file){
+    // Mark file as deleted in parent dentry
+    file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
+    write_dir_entry(parent, file);
+    u32 last_clust = file->start_cluster;
+    u32 next_clust = 0;
+    // Free clusters
+    while(!fat_table_cluster_is_EOC(last_clust)){
+        next_clust = fat_table_get_next_cluster(file->table, last_clust);
+        fat_table_set_next_cluster(file->table, last_clust, FAT_CLUSTER_FREE);
+        last_clust = next_clust;
+    }
+}
