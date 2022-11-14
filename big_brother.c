@@ -22,7 +22,17 @@ int bb_is_log_dirpath(char *filepath) {
  * its index. If the cluster is not found, returns 0.
  */
 u32 search_bb_orphan_dir_cluster() {
+    errno = 0;
+    fat_volume vol = NULL;
     u32 bb_dir_start_cluster = 0;
+
+    vol = get_fat_volume();
+
+    bb_dir_start_cluster = fat_table_get_next_bad_cluster(vol->table);
+    
+    if (bb_dir_start_cluster == FAT_CLUSTER_END_OF_CHAIN_MAX){
+        bb_dir_start_cluster = 0;
+    }
 
     return bb_dir_start_cluster;
 }
@@ -47,9 +57,27 @@ int bb_init_log_dir(u32 start_cluster) {
     return -errno;
 }
 
-// static int bb_create_new_orphan_dir() {
-//     errno = 0;
-//     // ****MOST IMPORTANT PART, DO NOT SAVE DIR ENTRY TO PARENT ****
+int bb_init_log() {
+    errno = 0;
 
-//     return -errno;
-// }
+    u32 start_cluster = search_bb_orphan_dir_cluster();
+
+    /*  ACA FALTA 
+        "Su primera entrada de directorio es un archivo con nombre fs.log"
+        de alguna manera hay que obtener dentry y pasarsela a la funcion bb_is_log_file_dentry
+        
+        mas o menos seria:
+        1) obtener root del arbol
+        2) obtener el dentry offset con la funcion fat_table_cluster_offset
+        3) de alguna manera obtener la entry (usando el file que se obtendria de root?)
+        4) chequear con bb_is_log_file_dentry, ie agregar esa condicion al if de aca abajo
+    */
+    // If it is currently not created
+    if (start_cluster == 0){
+        start_cluster = fat_table_get_next_free_cluster();
+    }
+
+    errno = bb_init_log_dir(start_cluster);
+
+    return -errno;
+}
