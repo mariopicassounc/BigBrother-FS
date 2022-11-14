@@ -375,19 +375,24 @@ int fat_fuse_unlink(const char *path){
     errno = 0;
     fat_volume vol = get_fat_volume();
     fat_tree_node f_node = fat_tree_node_search(vol->file_tree, path);
+
+    // Check for error during execution or existance 
     if(f_node == NULL || errno != 0){
         errno = ENOENT; //Not such file or directory
         return -errno;
     }
+    
     fat_file file = fat_tree_get_file(f_node);
+    
+    // Check if it is a directory
     if(fat_file_is_directory(file)){
         errno = EISDIR; //Illegal operation on a directory
         return -errno;
     }
-    //if(is_fs_log)
+
+    // Get parent
     fat_file f_parent = fat_tree_get_parent(f_node);
     fat_file_unlink(file, f_parent);
-    //fat_file_unlink
     fat_tree_delete(vol->file_tree, path);
     return -errno;
 }
@@ -397,15 +402,22 @@ int fat_fuse_rmdir(const char *path){
     errno = 0;
     fat_volume vol = get_fat_volume();
     fat_tree_node f_node = fat_tree_node_search(vol->file_tree, path);
+
+    // Check for error during execution or existance
     if(f_node == NULL || errno != 0){
         errno = ENOENT; //Not such file or directory
         return -errno;
     }
+
     fat_file direct = fat_tree_get_file(f_node);
+    
+    // Check if it is a directory
     if(!fat_file_is_directory(direct)){
         errno = ENOTDIR; //Not a directory
         return -errno;
     }
+
+    // Check if the directory is empty
     GList *children = fat_file_read_children(direct);
     bool is_child_empty = g_list_length(children) == 0;
     g_list_free(children);
@@ -413,11 +425,14 @@ int fat_fuse_rmdir(const char *path){
         errno = ENOTEMPTY; //Directory not empty
         return -errno;
     }
+
+    // Check if it has a father guiño guiño
     fat_file f_parent = fat_tree_get_parent(f_node);
     if(f_parent == NULL){
         errno = EBUSY; //Resource busy or locked
         return -errno;
     }
+    
     fat_file_unlink(direct, f_parent);
     fat_tree_delete(vol->file_tree, path);
     return -errno;

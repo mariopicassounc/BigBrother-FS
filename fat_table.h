@@ -65,6 +65,9 @@ u32 fat_table_get_clusters_for_size(fat_table table, size_t file_size);
 /* Returns the number of the first unused cluster in the data sector. */
 u32 fat_table_get_next_free_cluster(fat_table table);
 
+/* Returns the number of the first bad or reserved cluster in the data sector. */
+u32 fat_table_get_next_bad_cluster(fat_table table);
+
 /* Returns the offset in bytes to the address where @cluster starts. */
 off_t fat_table_cluster_offset(const fat_table table, u32 cluster);
 
