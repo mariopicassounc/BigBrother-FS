@@ -175,6 +175,9 @@ GList *fat_file_read_children(fat_file dir);
 ssize_t fat_file_pread(fat_file file, void *buf, size_t size, off_t offset,
                        fat_file parent);
 
+/* Initializes cluster for use as an empty directory */
+void fat_file_init_dir_cluster(fat_file dir);
+
 /* Truncates @file to @offset bytes. Frees unused clusters and sets new file
  * size. If offset is greater than file size, no operation is performed.
  * If there is an error in the read or write operations, sets errno to EIO

@@ -464,6 +464,17 @@ ssize_t fat_file_pread(fat_file file, void *buf, size_t size, off_t offset,
     return size - bytes_remaining;
 }
 
+//Fix mkdir
+void fat_file_init_dir_cluster(fat_file dir) {
+    // Borrar la dentry del archivo en el disco
+    size_t entry_size = sizeof(struct fat_dir_entry_s);
+    off_t dir_offset =
+        fat_table_cluster_offset(dir->table, dir->start_cluster);
+    u32 *buf = alloca(entry_size);
+    *buf= 0;
+    pwrite(dir->table->fd, buf, entry_size, dir_offset);
+}
+
 void fat_file_truncate(fat_file file, off_t offset, fat_file parent) {
     u32 last_cluster = 0, next_cluster = 0;
 
