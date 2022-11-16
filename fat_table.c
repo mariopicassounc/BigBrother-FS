@@ -66,24 +66,6 @@ u32 fat_table_get_next_free_cluster(fat_table table) {
     return fat_table_get_next_free_cluster;
 }
 
-u32 fat_table_get_next_bad_cluster(fat_table table) {
-    u32 fat_table_get_next_bad_cluster =
-        2; /* First two clusters are reserved */
-    while (
-        le32_to_cpu(
-            ((const le32 *)table->fat_map)[fat_table_get_next_free_cluster]) !=
-        FAT_CLUSTER_BAD_SECTOR) {
-        fat_table_get_next_bad_cluster++;
-    }
-    if (!fat_table_is_valid_cluster_number(table,
-                                           fat_table_get_next_bad_cluster)) {
-        fat_error("There was a problem fetching for a free cluster");
-        fat_table_get_next_bad_cluster = FAT_CLUSTER_END_OF_CHAIN_MAX;
-    }
-    DEBUG("next bad cluster = %u", fat_table_get_next_bad_cluster);
-    return fat_table_get_next_bad_cluster;
-}
-
 inline off_t fat_table_cluster_offset(const fat_table table, u32 cluster) {
     return table->data_start_offset +
            ((off_t)(cluster - 2) << table->cluster_order);
