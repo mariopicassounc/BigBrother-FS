@@ -1,9 +1,9 @@
 # Informe Laboratorio 4: BigBrother FS
 
-Grupo 22
-Mario Picasso
-Mateo Malpassi
-Facundo Coria
+- Grupo 22
+- Mario Picasso
+- Mateo Malpassi
+- Facundo Coria
 
 ## Preguntas:
 
@@ -23,14 +23,18 @@ Los clusters de las entradas de directorio tienen 512 bytes, y cada entrada es d
 
 >4. Cuando se ejecuta el comando como ls -l, el sistema operativo, ¿llama a algún programa de usuario? ¿A alguna llamada al sistema? ¿Cómo se conecta esto con FUSE? ¿Qué funciones de su código se ejecutan finalmente?
 
+"ls -l" no realiza ninguna llamada a programa de usuario, ls mismo es un programa de usuario. Sí utiliza las syscalls: read, open, switch, close.
 
+Una vez que el sistema está corriendo, cada vez que se invoca una llamada a
+sistema que involucra al filesystem, el SO transfiere la llamada a FUSE, que busca en la estructura fuse_operations la función que realiza la tarea de la syscall requerida. Estas funciones están implementadas en `fat_fuse_ops.c`.
+
+En este programa de usuario se ejecutan las funciones fat_fuse_opendir, fat_fuse_getattr, fat_fuse_readdir, fat_fuse_releasedir.
 
 >5. ¿Por qué tienen que escribir las entradas de directorio manualmente pero no tienen que guardar la tabla FAT cada vez que la modifican?
 
 Las entradas de directorio están almacenadas en la imagen de la FAT, la cual vive en el disco. Esta imagen se lee una vez y se la mapea a memoria RAM, por lo tanto cuando hacemos alguna modificación (ie cambiamos el nombre) lo que en realidad estamos modificando es la tabla mapeada en memoria. Si queremos guardar en disco los cambios que hicimos tenemos que hacerlo mediante la función 
 static void write_dir_entry(fat_file parent, fat_file file).
 
-
 >6. Para los sistemas de archivos FAT32, la tabla FAT, ¿siempre tiene el mismo tamaño? En caso de que sí, ¿qué tamaño tiene?
 
-La tabla FAT tiene siempre el mismo tamaño (aunque depende en cual unidad de almacenamiento se implemente, ej: en un disco de 1TB será más grande que en un pendrive). En el caso de la FAT con la que trabajamos nosotros, notamos que en su estructura el número de clusters está dado por un u32 (unsigned int de 32 bits), con lo cual tendríamos 2^32 aproximadamente. Luego a este número lo multiplicamos por el tamaño de cada cluster (512 Bytes) y obtenemos el tamaño total de la tabla FAT.
+El tamaño de la tabla FAT depende del tamaño de la imágen. Una vez creada la imágen, ese tamaño se mantiene fijo.
