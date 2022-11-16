@@ -23,34 +23,9 @@
 #include <unistd.h>
 #include <assert.h>
 
-#define LOG_PATH "/fs.log"
+
 #define LOG_MESSAGE_SIZE 100
 #define DATE_MESSAGE_SIZE 30
-
-static void fat_fuse_init_log(fat_volume vol){
-    fat_tree_node file_node;
-
-    file_node = fat_tree_node_search(vol->file_tree, LOG_PATH);
-    
-    if (file_node != NULL){
-        DEBUG("log already exists");
-        DEBUG(LOG_PATH);
-        return;
-    }
-    
-    DEBUG("creating log");
-    int mknod_err = fat_fuse_mknod(LOG_PATH, 0, 0);
-    
-    if (mknod_err != 0){
-        DEBUG("Not possible create log file");
-        return;
-    }
-    
-    // check correct creation of file
-    file_node = fat_tree_node_search(vol->file_tree, LOG_PATH);
-    assert(file_node != NULL);
-    return;
-}
 
 /* Writes @log to the log file if it exists
  *
@@ -60,10 +35,10 @@ static void fat_fuse_log_write(const char *log) {
     assert(log != NULL);
 
     fat_volume vol = get_fat_volume();
-    fat_tree_node log_node = fat_tree_node_search(vol->file_tree, LOG_PATH);
+    fat_tree_node log_node = fat_tree_node_search(vol->file_tree, BB_LOG_FILE);
     
     if (log_node == NULL) {
-        DEBUG(LOG_PATH "doesn't exist, can't log");
+        DEBUG(BB_LOG_FILE "doesn't exist, can't log");
         return;
     }
     fat_file log_file = fat_tree_get_file(log_node);
@@ -73,7 +48,7 @@ static void fat_fuse_log_write(const char *log) {
 
 static bool is_fs_log(fat_file file) {
     assert(file != NULL);
-    return (fat_file_cmp_path(file, LOG_PATH) == 0);
+    return (bb_is_log_filepath(file->filepath) || bb_is_log_dirpath(file->filepath));
 }
 
 static void format_log(char *buf, char * filepath, char *operation_type) {
@@ -177,8 +152,7 @@ static void fat_fuse_read_children(fat_tree_node dir_node) {
             fat_tree_insert(vol->file_tree, dir_node, (fat_file)l->data);
         
     }
-    fat_fuse_init_log(vol);
-    DEBUG("estoy??");
+    bb_init_log();
 }
 
 /* Add entries of a directory in @fi to @buf using @filler function. */

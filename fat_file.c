@@ -22,12 +22,12 @@
 /* Logging function to print a directory entry. Commented to avoid unused
  * function error.
  */
-// static void fat_file_print_dentry(fat_dir_entry dentry) {
-//     printf("\t Dentry: \n");
-//     printf("\t Basename: %.*s\n", 8, dentry->base_name);
-//     printf("\t Extension: %.*s\n", 3, dentry->extension);
-//     printf("\t Attributes: %x\n", dentry->attribs);
-// }
+void fat_file_print_dentry(fat_dir_entry dentry) {
+    printf("\t Dentry: \n");
+    printf("\t Basename: %.*s\n", 8, dentry->base_name);
+    printf("\t Extension: %.*s\n", 3, dentry->extension);
+    printf("\t Attributes: %x\n", dentry->attribs);
+}
 
 static void write_dir_entry(fat_file parent, fat_file file);
 

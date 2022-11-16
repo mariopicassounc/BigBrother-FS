@@ -200,4 +200,9 @@ ssize_t fat_file_pwrite(fat_file file, const void *buf, size_t size,
  */
 void fat_file_unlink(fat_file parent, fat_file file);
 
+/* Logging function to print a directory entry. Commented to avoid unused
+ * function error.
+ */
+void fat_file_print_dentry(fat_dir_entry dentry) ;
+
 #endif /* _FAT_FILE_H */
