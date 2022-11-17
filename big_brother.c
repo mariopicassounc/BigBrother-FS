@@ -28,7 +28,12 @@ int bb_is_log_dirpath(char *filepath) {
 static bool is_orphan_dir_cluster(u32 cur_cluster){
     bool is_orphan = false;
     fat_volume vol = get_fat_volume();
-    void * buf = calloc(1, sizeof(struct fat_dir_entry_s));    
+    void * buf = calloc(1, sizeof(struct fat_dir_entry_s));
+
+    if(buf == NULL){
+    fprintf(stderr, "Invalid buf allocated memory");
+    exit(EXIT_FAILURE);
+    }    
     
     // Checks in fat table if it is bad/reserved
     if (fat_table_cluster_is_bad_sector(le32_to_cpu(((const le32 *)vol->table->fat_map)[cur_cluster]))){
@@ -92,6 +97,12 @@ static int bb_init_log_dir(u32 start_cluster, bool *dir_exist) {
 
     // Add directory to file tree. It's entries will be like any other dir.
     root_node = fat_tree_node_search(vol->file_tree, "/");
+
+    if(root_node == NULL || errno != 0){
+        errno = ENOENT; //Not such file or directory
+        return -errno;
+    }
+    
     vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);
 
     return -errno;

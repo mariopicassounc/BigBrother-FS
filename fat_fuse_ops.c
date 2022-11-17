@@ -68,6 +68,7 @@ static void format_log(char *buf, char * filepath, char *operation_type) {
 }
 
 static void fat_fuse_log_activity(char *operation_type, fat_file file) {
+        
     char buf[LOG_MESSAGE_SIZE] = "";
     format_log(buf, file->filepath, operation_type);
     fat_fuse_log_write(buf);
@@ -367,6 +368,10 @@ int fat_fuse_unlink(const char *path){
 
     // Get parent
     fat_file f_parent = fat_tree_get_parent(f_node);
+    if(f_parent == NULL){
+        errno = EBUSY; //Resource busy or locked
+        return -errno;
+    }    
     fat_file_unlink(file, f_parent);
     fat_tree_delete(vol->file_tree, path);
     return -errno;
