@@ -9,7 +9,7 @@
 
 >1. Cuando se ejecuta el main con la opción -d, ¿qué se está mostrando en la pantalla?
 
-Cuando ejecutamos el main con la opción -d se muestra en pantalla todos los mensajes seteados por DEBUG y los provenientes de Fuse.
+Cuando ejecutamos el Main con la opción -d, se muestran en pantalla las llamadas a las fuse_operations que va haciendo cada operación que realizamos en la imagen montada.
 
 >2. ¿Hay alguna manera de saber el nombre del archivo guardado en el cluster 157?
 
@@ -23,7 +23,7 @@ Los clusters de las entradas de directorio tienen 512 bytes, y cada entrada es d
 
 >4. Cuando se ejecuta el comando como ls -l, el sistema operativo, ¿llama a algún programa de usuario? ¿A alguna llamada al sistema? ¿Cómo se conecta esto con FUSE? ¿Qué funciones de su código se ejecutan finalmente?
 
-"ls -l" no realiza ninguna llamada a programa de usuario, ls mismo es un programa de usuario. Sí utiliza las syscalls: read, open, switch, close.
+"ls -l" no realiza ninguna llamada a programa de usuario, ls mismo es un programa de usuario. Sí utiliza las syscalls: opendir, readdir, getattr y releasedir
 
 Una vez que el sistema está corriendo, cada vez que se invoca una llamada a
 sistema que involucra al filesystem, el SO transfiere la llamada a FUSE, que busca en la estructura fuse_operations la función que realiza la tarea de la syscall requerida. Estas funciones están implementadas en `fat_fuse_ops.c`.
